@@ -1,0 +1,111 @@
+{
+  "name": "sqlmaker",
+  "displayName": "SQLmaker",
+  "description": "Natural language to SQL extension using AI.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sqlmakerViewContainer",
+          "title": "SQLmaker",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "sqlmakerViewContainer": [
+        {
+          "type": "webview",
+          "id": "sqlmaker.sidebarView",
+          "name": "SQLmaker Assistant",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "sqlmaker.testIntegration",
+        "title": "SQLmaker: Test Integration"
+      },
+      {
+        "command": "sqlmaker.addConnection",
+        "title": "SQLmaker: Add Database Connection"
+      },
+      {
+        "command": "sqlmaker.fetchSchema",
+        "title": "SQLmaker: Fetch Database Schema"
+      },
+      {
+        "command": "sqlmaker.testTableList",
+        "title": "SQLmaker: Test Table List Query"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "sqlmaker.chatParticipant",
+        "name": "sqlmaker",
+        "description": "SQLmaker AI DBA: Generates PostgreSQL queries with real-time schema context.",
+        "commands": [
+          {
+            "name": "generate",
+            "description": "Generate a SQL query from natural language using the active database schema."
+          },
+          {
+            "name": "explain",
+            "description": "Explain an existing SQL query in plain English based on schema relations."
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.x",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@types/vscode": "^1.85.0",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.5.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.61.1",
+    "vite": "^8.2.2"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  },
+  "dependencies": {
+    "openai": "^7.5.0",
+    "pg": "^8.23.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  }
+}

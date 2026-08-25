@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQLmaker</title>
+  <style>
+    body { font-family: var(--vscode-font-family); padding: 10px; color: var(--vscode-foreground); background: var(--vscode-sideBar-background); }
+    textarea { width: 100%; height: 70px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); box-sizing: border-box; }
+    button { width: 100%; margin-top: 8px; padding: 6px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; cursor: pointer; }
+    button:hover { background: var(--vscode-button-hoverBackground); }
+    pre { background: var(--vscode-editor-background); padding: 8px; overflow-x: auto; font-family: var(--vscode-editor-font-family); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+    th, td { border: 1px solid var(--vscode-panel-border); padding: 4px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h3>SQLmaker Assistant</h3>
+  <button id="btnFetchSchema">Load / Inspect Schema</button>
+  <div id="schemaContainer"></div>
+
+  <hr/>
+
+  <label for="prompt">Ask SQLmaker:</label>
+  <textarea id="prompt" placeholder="e.g., Show top 5 users by workouts..."></textarea>
+  <button id="btnGenerate">Generate SQL</button>
+
+  <div id="outputArea"></div>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    document.getElementById('btnFetchSchema').addEventListener('click', () => {
+      vscode.postMessage({ type: 'GET_SCHEMA' });
+    });
+
+    document.getElementById('btnGenerate').addEventListener('click', () => {
+      const prompt = document.getElementById('prompt').value;
+      if (prompt) vscode.postMessage({ type: 'GENERATE_SQL', prompt });
+    });
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      const output = document.getElementById('outputArea');
+
+      switch (message.type) {
+        case 'SCHEMA_RESULT':
+          document.getElementById('schemaContainer').innerHTML = 
+            '<p>Loaded ' + message.payload.length + ' table(s).</p>';
+          break;
+
+        case 'SQL_RESULT':
+          output.innerHTML = '<h4>Generated SQL:</h4><pre><code>' + message.payload + '</code></pre>' +
+            '<button onclick="runQuery(\`' + message.payload.replace(/\`/g, '\`') + '\`)">Run Query</button>';
+          break;
+
+        case 'QUERY_RESULTS':
+          let rows = message.payload.rows;
+          let fields = message.payload.fields;
+          let html = '<h4>Results (' + rows.length + ')</h4><table><thead><tr>';
+          fields.forEach(f => html += '<th>' + f + '</th>');
+          html += '</tr></thead><tbody>';
+          rows.forEach(r => {
+            html += '<tr>';
+            fields.forEach(f => html += '<td>' + r[f] + '</td>');
+            html += '</tr>';
+          });
+          html += '</tbody></table>';
+          output.innerHTML += html;
+          break;
+
+          
+        case 'ERROR':
+          output.innerHTML = '<p style="color:var(--vscode-errorForeground);">Error: ' + message.payload + '</p>';
+          break;
+      }
+    });
+
+    function runQuery(sql) {
+      vscode.postMessage({ type: 'EXECUTE_QUERY', sql });
+    }
+  </script>
+</body>
+</html>
