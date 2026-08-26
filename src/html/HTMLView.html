@@ -6,16 +6,58 @@
   <title>SQLmaker</title>
   <style>
     body { font-family: var(--vscode-font-family); padding: 10px; color: var(--vscode-foreground); background: var(--vscode-sideBar-background); }
-    textarea { width: 100%; height: 70px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); box-sizing: border-box; }
-    button { width: 100%; margin-top: 8px; padding: 6px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; cursor: pointer; }
+    input, textarea { width: 100%; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); box-sizing: border-box; margin-bottom: 6px; padding: 4px; }
+    textarea { height: 70px; }
+    button { width: 100%; margin-top: 4px; padding: 6px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; cursor: pointer; }
     button:hover { background: var(--vscode-button-hoverBackground); }
+    .form-group { margin-bottom: 8px; }
+    .form-group label { display: block; font-size: 11px; margin-bottom: 2px; }
+    .row { display: flex; gap: 6px; }
+    .row > div { flex: 1; }
     pre { background: var(--vscode-editor-background); padding: 8px; overflow-x: auto; font-family: var(--vscode-editor-font-family); }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
     th, td { border: 1px solid var(--vscode-panel-border); padding: 4px; text-align: left; }
+    .status-ok { color: var(--vscode-testing-iconPassed); font-size: 11px; margin-top: 4px; }
   </style>
 </head>
 <body>
   <h3>SQLmaker Assistant</h3>
+
+  <!-- Connection Form -->
+  <details open>
+    <summary><strong>Database Connection</strong></summary>
+    <div style="margin-top: 8px;">
+      <div class="row">
+        <div>
+          <label for="dbHost">Host</label>
+          <input type="text" id="dbHost" value="localhost" placeholder="localhost" />
+        </div>
+        <div style="max-width: 60px;">
+          <label for="dbPort">Port</label>
+          <input type="number" id="dbPort" value="5432" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="dbName">Database</label>
+        <input type="text" id="dbName" value="ring20_db" placeholder="ring20_db" />
+      </div>
+      <div class="row">
+        <div>
+          <label for="dbUser">User</label>
+          <input type="text" id="dbUser" value="postgres" />
+        </div>
+        <div>
+          <label for="dbPass">Password</label>
+          <input type="password" id="dbPass" placeholder="••••••••" />
+        </div>
+      </div>
+      <button id="btnConnect">Save & Connect</button>
+      <div id="connStatus"></div>
+    </div>
+  </details>
+
+  <hr/>
+
   <button id="btnFetchSchema">Load / Inspect Schema</button>
   <div id="schemaContainer"></div>
 
@@ -30,6 +72,17 @@
   <script>
     const vscode = acquireVsCodeApi();
 
+    document.getElementById('btnConnect').addEventListener('click', () => {
+      const config = {
+        host: document.getElementById('dbHost').value || 'localhost',
+        port: parseInt(document.getElementById('dbPort').value, 10) || 5432,
+        database: document.getElementById('dbName').value,
+        user: document.getElementById('dbUser').value,
+        password: document.getElementById('dbPass').value
+      };
+      vscode.postMessage({ type: 'CONNECT_DB', config });
+    });
+
     document.getElementById('btnFetchSchema').addEventListener('click', () => {
       vscode.postMessage({ type: 'GET_SCHEMA' });
     });
@@ -42,8 +95,14 @@
     window.addEventListener('message', event => {
       const message = event.data;
       const output = document.getElementById('outputArea');
+      const connStatus = document.getElementById('connStatus');
 
       switch (message.type) {
+        
+        case 'CONNECT_SUCCESS':
+          connStatus.innerHTML = '<p class="status-ok">✔ Connected to ' + message.payload + '</p>';
+          break;
+
         case 'SCHEMA_RESULT':
           document.getElementById('schemaContainer').innerHTML = 
             '<p>Loaded ' + message.payload.length + ' table(s).</p>';
@@ -51,7 +110,7 @@
 
         case 'SQL_RESULT':
           output.innerHTML = '<h4>Generated SQL:</h4><pre><code>' + message.payload + '</code></pre>' +
-            '<button onclick="runQuery(\`' + message.payload.replace(/\`/g, '\`') + '\`)">Run Query</button>';
+            '<button onclick="runQuery(\`' + message.payload.replace(/`/g, '\\`') + '\`)">Run Query</button>';
           break;
 
         case 'QUERY_RESULTS':
@@ -69,10 +128,11 @@
           output.innerHTML += html;
           break;
 
-          
         case 'ERROR':
           output.innerHTML = '<p style="color:var(--vscode-errorForeground);">Error: ' + message.payload + '</p>';
           break;
+
+          
       }
     });
 
