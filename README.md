@@ -1,71 +1,76 @@
-# sqlmaker README
+# SQLmaker — AI PostgreSQL DBA Assistant
 
-This is the README for your extension "sqlmaker". After writing up a brief description, we recommend including the following sections.
-
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+**SQLmaker** brings natural language-to-SQL translation, schema-aware query generation, and execution directly into VS Code. Powered by a dual AI engine, SQLmaker uses native VS Code Language Models (GitHub Copilot) or direct OpenAI integrations to generate accurate, context-aware PostgreSQL queries in seconds.
 
 ---
 
-## Following extension guidelines
+## Features
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+* **Schema-Aware Generation**: Automatically extracts and compresses active database schema DDL to supply high-precision context to the AI.
+* **Dual AI Engine**:
+  * **Native VS Code Language Models**: Works out-of-the-box with active GitHub Copilot logins.
+  * **Direct OpenAI Fallback**: Use your own API key stored securely in VS Code `SecretStorage`.
+* **Sidebar Assistant Pane**: Connect to databases, view schema metadata, generate queries from natural language prompts, and execute results in a unified panel.
+* **Inline Comment Translation**: Translate comments in `.sql` files directly into valid SQL queries using quick commands.
+* **Chat Participant (`@sqlmaker`)**: Interact directly inside the VS Code Chat panel to generate or explain complex queries.
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+---
 
-## Working with Markdown
+## Quick Start
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+### 1. Install & Open SQLmaker
+Open the SQLmaker icon in the VS Code Activity Bar (Sidebar) to open the assistant panel.
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+### 2. Configure Database Connection
+Enter your PostgreSQL credentials directly in the **Database Connection** panel:
+* **Host**: `localhost` (or server address)
+* **Port**: `5432`
+* **Database**: `your_database_name`
+* **User**: `postgres`
+* **Password**: `your_password`
 
-## For more information
+Click **Save & Connect**. Credentials are stored securely using VS Code's native keytar integration.
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+### 3. Generate & Run Queries
+1. Click **Load / Inspect Schema** to index table structures.
+2. Type your request in natural language (e.g., *"Show top 5 users by total orders with active status"*).
+3. Click **Generate SQL**.
+4. Review the generated query and click **Run Query** to view tabular results.
 
-**Enjoy!**
+---
+
+## Commands
+
+Access these commands from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
+
+| Command | Description |
+| :--- | :--- |
+| `SQLmaker: Set OpenAI API Key` | Save your OpenAI API Key into secure storage (fallback mode). |
+| `SQLmaker: Add Database Connection` | Configure connection parameters via command prompts. |
+| `SQLmaker: Fetch Database Schema` | Trigger a manual schema extraction and refresh cache. |
+| `SQLmaker: Translate Inline Comment to SQL` | Converts highlighted comment text in an active editor into SQL. |
+| `SQLmaker: Check Connected Language Models` | Verifies available `vscode.lm` models. |
+
+---
+
+## Chat Participant Usage
+
+If GitHub Copilot or Language Model access is enabled, invoke SQLmaker directly in the VS Code Chat drawer:
+
+* `@sqlmaker /generate Show all workouts completed in the last 30 days`
+* `@sqlmaker /explain` (with an active query selected in your editor)
+
+---
+
+## Requirements
+
+* **VS Code**: `v1.85.0` or higher.
+* **Database**: PostgreSQL 12+.
+* **AI Access**: Active GitHub Copilot subscription **OR** an OpenAI API Key.
+
+---
+
+## Security & Privacy
+
+* **Schema Context Only**: SQLmaker extracts table names, column names, and data types to construct compact DDL prompts. **Your actual database rows are never sent to AI models.**
+* **Local Processing**: Database credentials are saved using VS Code's encrypted secret storage and never leaves your environment.

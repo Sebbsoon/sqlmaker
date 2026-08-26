@@ -3,6 +3,7 @@
 out/**
 node_modules/**
 src/**
+!src/html/HTMLView.html
 .gitignore
 .yarnrc
 esbuild.js
@@ -12,3 +13,6 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+vite.config.ts
+*.vsix
+.eslintrc.json
