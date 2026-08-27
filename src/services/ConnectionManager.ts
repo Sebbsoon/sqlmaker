@@ -1,10 +1,10 @@
-import * as vscode from 'vscode';
-import { Pool } from 'pg';
+import * as vscode from "vscode";
+import { Pool } from "pg";
 
 export interface DBConfig {
   id: string;
   name: string;
-  type: 'postgres' | 'mysql' | 'sqlite';
+  type: "postgres" | "mysql" | "sqlite";
   host?: string;
   port?: number;
   database: string;
@@ -14,7 +14,7 @@ export interface DBConfig {
 export class ConnectionManager {
   private activePool: Pool | null = null;
   private activeConfig: DBConfig | null = null;
-  private readonly SECRET_PREFIX = 'sqlmaker.db.password.';
+  private readonly SECRET_PREFIX = "sqlmaker.db.password.";
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -22,8 +22,11 @@ export class ConnectionManager {
    * Securely saves DB configuration in global state and password in SecretStorage
    */
   async saveConnection(config: DBConfig, password?: string): Promise<void> {
-    const connections = this.context.globalState.get<DBConfig[]>('sqlmaker.connections', []);
-    const existingIdx = connections.findIndex(c => c.id === config.id);
+    const connections = this.context.globalState.get<DBConfig[]>(
+      "sqlmaker.connections",
+      [],
+    );
+    const existingIdx = connections.findIndex((c) => c.id === config.id);
 
     if (existingIdx >= 0) {
       connections[existingIdx] = config;
@@ -31,10 +34,13 @@ export class ConnectionManager {
       connections.push(config);
     }
 
-    await this.context.globalState.update('sqlmaker.connections', connections);
+    await this.context.globalState.update("sqlmaker.connections", connections);
 
     if (password) {
-      await this.context.secrets.store(`${this.SECRET_PREFIX}${config.id}`, password);
+      await this.context.secrets.store(
+        `${this.SECRET_PREFIX}${config.id}`,
+        password,
+      );
     }
   }
 
@@ -48,12 +54,14 @@ export class ConnectionManager {
       this.activeConfig = null;
     }
 
-    const password = await this.context.secrets.get(`${this.SECRET_PREFIX}${config.id}`);
+    const password = await this.context.secrets.get(
+      `${this.SECRET_PREFIX}${config.id}`,
+    );
 
-    if (config.type === 'postgres') {
+    if (config.type === "postgres") {
       const pool = new Pool({
         user: config.user,
-        host: config.host || 'localhost',
+        host: config.host || "localhost",
         database: config.database,
         password: password || undefined,
         port: config.port || 5432,
@@ -67,8 +75,10 @@ export class ConnectionManager {
 
       this.activePool = pool;
       this.activeConfig = config;
-      
-      vscode.window.showInformationMessage(`SQLmaker: Connected to ${config.name} (${config.database})`);
+
+      vscode.window.showInformationMessage(
+        `SQLmaker: Connected to ${config.name} (${config.database})`,
+      );
     } else {
       throw new Error(`Database type '${config.type}' is not yet supported.`);
     }
@@ -76,7 +86,9 @@ export class ConnectionManager {
 
   getPool(): Pool {
     if (!this.activePool) {
-      throw new Error('No active database connection. Please connect to a database first.');
+      throw new Error(
+        "No active database connection. Please connect to a database first.",
+      );
     }
     return this.activePool;
   }
@@ -90,7 +102,9 @@ export class ConnectionManager {
       await this.activePool.end();
       this.activePool = null;
       this.activeConfig = null;
-      vscode.window.showInformationMessage('SQLmaker: Disconnected from database.');
+      vscode.window.showInformationMessage(
+        "SQLmaker: Disconnected from database.",
+      );
     }
   }
 }

@@ -32,6 +32,26 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage(async (data) => {
       switch (data.type) {
+        case "CONNECT_DB": {
+          try {
+            const config = data.config;
+
+            await this.connManager.saveConnection(config, data.password);
+            await this.connManager.connect(config);
+
+            webviewView.webview.postMessage({
+              type: "CONNECT_SUCCESS",
+              payload: config.name,
+            });
+          } catch (err: any) {
+            webviewView.webview.postMessage({
+              type: "ERROR",
+              payload: err.message,
+            });
+          }
+          break;
+        }
+
         case "GET_SCHEMA": {
           try {
             const pool = this.connManager.getPool();

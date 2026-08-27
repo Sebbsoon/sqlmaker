@@ -1,144 +1,237 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SQLmaker</title>
-  <style>
-    body { font-family: var(--vscode-font-family); padding: 10px; color: var(--vscode-foreground); background: var(--vscode-sideBar-background); }
-    input, textarea { width: 100%; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); box-sizing: border-box; margin-bottom: 6px; padding: 4px; }
-    textarea { height: 70px; }
-    button { width: 100%; margin-top: 4px; padding: 6px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; cursor: pointer; }
-    button:hover { background: var(--vscode-button-hoverBackground); }
-    .form-group { margin-bottom: 8px; }
-    .form-group label { display: block; font-size: 11px; margin-bottom: 2px; }
-    .row { display: flex; gap: 6px; }
-    .row > div { flex: 1; }
-    pre { background: var(--vscode-editor-background); padding: 8px; overflow-x: auto; font-family: var(--vscode-editor-font-family); }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
-    th, td { border: 1px solid var(--vscode-panel-border); padding: 4px; text-align: left; }
-    .status-ok { color: var(--vscode-testing-iconPassed); font-size: 11px; margin-top: 4px; }
-  </style>
-</head>
-<body>
-  <h3>SQLmaker Assistant</h3>
-
-  <!-- Connection Form -->
-  <details open>
-    <summary><strong>Database Connection</strong></summary>
-    <div style="margin-top: 8px;">
-      <div class="row">
-        <div>
-          <label for="dbHost">Host</label>
-          <input type="text" id="dbHost" value="localhost" placeholder="localhost" />
-        </div>
-        <div style="max-width: 60px;">
-          <label for="dbPort">Port</label>
-          <input type="number" id="dbPort" value="5432" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label for="dbName">Database</label>
-        <input type="text" id="dbName" value="ring20_db" placeholder="ring20_db" />
-      </div>
-      <div class="row">
-        <div>
-          <label for="dbUser">User</label>
-          <input type="text" id="dbUser" value="postgres" />
-        </div>
-        <div>
-          <label for="dbPass">Password</label>
-          <input type="password" id="dbPass" placeholder="••••••••" />
-        </div>
-      </div>
-      <button id="btnConnect">Save & Connect</button>
-      <div id="connStatus"></div>
-    </div>
-  </details>
-
-  <hr/>
-
-  <button id="btnFetchSchema">Load / Inspect Schema</button>
-  <div id="schemaContainer"></div>
-
-  <hr/>
-
-  <label for="prompt">Ask SQLmaker:</label>
-  <textarea id="prompt" placeholder="e.g., Show top 5 users by workouts..."></textarea>
-  <button id="btnGenerate">Generate SQL</button>
-
-  <div id="outputArea"></div>
-
-  <script>
-    const vscode = acquireVsCodeApi();
-
-    document.getElementById('btnConnect').addEventListener('click', () => {
-      const config = {
-        host: document.getElementById('dbHost').value || 'localhost',
-        port: parseInt(document.getElementById('dbPort').value, 10) || 5432,
-        database: document.getElementById('dbName').value,
-        user: document.getElementById('dbUser').value,
-        password: document.getElementById('dbPass').value
-      };
-      vscode.postMessage({ type: 'CONNECT_DB', config });
-    });
-
-    document.getElementById('btnFetchSchema').addEventListener('click', () => {
-      vscode.postMessage({ type: 'GET_SCHEMA' });
-    });
-
-    document.getElementById('btnGenerate').addEventListener('click', () => {
-      const prompt = document.getElementById('prompt').value;
-      if (prompt) vscode.postMessage({ type: 'GENERATE_SQL', prompt });
-    });
-
-    window.addEventListener('message', event => {
-      const message = event.data;
-      const output = document.getElementById('outputArea');
-      const connStatus = document.getElementById('connStatus');
-
-      switch (message.type) {
-        
-        case 'CONNECT_SUCCESS':
-          connStatus.innerHTML = '<p class="status-ok">✔ Connected to ' + message.payload + '</p>';
-          break;
-
-        case 'SCHEMA_RESULT':
-          document.getElementById('schemaContainer').innerHTML = 
-            '<p>Loaded ' + message.payload.length + ' table(s).</p>';
-          break;
-
-        case 'SQL_RESULT':
-          output.innerHTML = '<h4>Generated SQL:</h4><pre><code>' + message.payload + '</code></pre>' +
-            '<button onclick="runQuery(\`' + message.payload.replace(/`/g, '\\`') + '\`)">Run Query</button>';
-          break;
-
-        case 'QUERY_RESULTS':
-          let rows = message.payload.rows;
-          let fields = message.payload.fields;
-          let html = '<h4>Results (' + rows.length + ')</h4><table><thead><tr>';
-          fields.forEach(f => html += '<th>' + f + '</th>');
-          html += '</tr></thead><tbody>';
-          rows.forEach(r => {
-            html += '<tr>';
-            fields.forEach(f => html += '<td>' + r[f] + '</td>');
-            html += '</tr>';
-          });
-          html += '</tbody></table>';
-          output.innerHTML += html;
-          break;
-
-        case 'ERROR':
-          output.innerHTML = '<p style="color:var(--vscode-errorForeground);">Error: ' + message.payload + '</p>';
-          break;
-
-          
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQLmaker</title>
+    <style>
+      body {
+        font-family: var(--vscode-font-family);
+        padding: 10px;
+        color: var(--vscode-foreground);
+        background: var(--vscode-sideBar-background);
       }
-    });
+      input,
+      textarea {
+        width: 100%;
+        background: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+        border: 1px solid var(--vscode-input-border);
+        box-sizing: border-box;
+        margin-bottom: 6px;
+        padding: 4px;
+      }
+      textarea {
+        height: 70px;
+      }
+      button {
+        width: 100%;
+        margin-top: 4px;
+        padding: 6px;
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background: var(--vscode-button-hoverBackground);
+      }
+      .form-group {
+        margin-bottom: 8px;
+      }
+      .form-group label {
+        display: block;
+        font-size: 11px;
+        margin-bottom: 2px;
+      }
+      .row {
+        display: flex;
+        gap: 6px;
+      }
+      .row > div {
+        flex: 1;
+      }
+      pre {
+        background: var(--vscode-editor-background);
+        padding: 8px;
+        overflow-x: auto;
+        font-family: var(--vscode-editor-font-family);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 11px;
+      }
+      th,
+      td {
+        border: 1px solid var(--vscode-panel-border);
+        padding: 4px;
+        text-align: left;
+      }
+      .status-ok {
+        color: var(--vscode-testing-iconPassed);
+        font-size: 11px;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>SQLmaker Assistant</h3>
 
-    function runQuery(sql) {
-      vscode.postMessage({ type: 'EXECUTE_QUERY', sql });
-    }
-  </script>
-</body>
+    <!-- Connection Form -->
+    <details open>
+      <summary><strong>Database Connection</strong></summary>
+      <div style="margin-top: 8px">
+        <div class="row">
+          <div>
+            <label for="dbHost">Host</label>
+            <input
+              type="text"
+              id="dbHost"
+              value="localhost"
+              placeholder="localhost"
+            />
+          </div>
+          <div style="max-width: 60px">
+            <label for="dbPort">Port</label>
+            <input type="number" id="dbPort" value="5432" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="dbName">Database</label>
+          <input
+            type="text"
+            id="dbName"
+            value="ring20_db"
+            placeholder="ring20_db"
+          />
+        </div>
+        <div class="row">
+          <div>
+            <label for="dbUser">User</label>
+            <input type="text" id="dbUser" value="postgres" />
+          </div>
+          <div>
+            <label for="dbPass">Password</label>
+            <input type="password" id="dbPass" placeholder="••••••••" />
+          </div>
+        </div>
+        <button id="btnConnect">Save & Connect</button>
+        <div id="connStatus"></div>
+      </div>
+    </details>
+
+    <hr />
+
+    <button id="btnFetchSchema">Load / Inspect Schema</button>
+    <div id="schemaContainer"></div>
+
+    <hr />
+
+    <label for="prompt">Ask SQLmaker:</label>
+    <textarea
+      id="prompt"
+      placeholder="e.g., Show top 5 users by workouts..."
+    ></textarea>
+    <button id="btnGenerate">Generate SQL</button>
+
+    <div id="outputArea"></div>
+
+    <script>
+      const vscode = acquireVsCodeApi();
+
+      document.getElementById("btnConnect").addEventListener("click", () => {
+        const database = document.getElementById("dbName").value;
+        const host = document.getElementById("dbHost").value || "localhost";
+        const user = document.getElementById("dbUser").value;
+
+        const config = {
+          id: `${host}:${database}:${user}`,
+          name: database,
+          type: "postgres",
+          host,
+          port: parseInt(document.getElementById("dbPort").value, 10) || 5432,
+          database,
+          user,
+        };
+
+        vscode.postMessage({
+          type: "CONNECT_DB",
+          config,
+          password: document.getElementById("dbPass").value,
+        });
+      });
+
+      document
+        .getElementById("btnFetchSchema")
+        .addEventListener("click", () => {
+          vscode.postMessage({ type: "GET_SCHEMA" });
+        });
+
+      document.getElementById("btnGenerate").addEventListener("click", () => {
+        const prompt = document.getElementById("prompt").value;
+        if (prompt) vscode.postMessage({ type: "GENERATE_SQL", prompt });
+      });
+
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        const output = document.getElementById("outputArea");
+        const connStatus = document.getElementById("connStatus");
+
+        switch (message.type) {
+          case "CONNECT_SUCCESS":
+            connStatus.innerHTML =
+              '<p class="status-ok">✔ Connected to ' + message.payload + "</p>";
+            output.innerHTML = "<p></p>";
+
+            break;
+
+          case "SCHEMA_RESULT":
+            document.getElementById("schemaContainer").innerHTML =
+              "<p>Loaded " + message.payload.length + " table(s).</p>";
+            break;
+
+          case "SQL_RESULT":
+            output.innerHTML =
+              "<h4>Generated SQL:</h4><pre><code>" +
+              message.payload +
+              "</code></pre>" +
+              '<button onclick="runQuery(\`' +
+              message.payload.replace(/`/g, "\\`") +
+              '\`)">Run Query</button>';
+            break;
+
+          case "QUERY_RESULTS":
+            /*
+            let rows = message.payload.rows;
+            let fields = message.payload.fields;
+            let html =
+              "<h4>Results (" + rows.length + ")</h4><table><thead><tr>";
+            fields.forEach((f) => (html += "<th>" + f + "</th>"));
+            html += "</tr></thead><tbody>";
+            rows.forEach((r) => {
+              html += "<tr>";
+              fields.forEach((f) => (html += "<td>" + r[f] + "</td>"));
+              html += "</tr>";
+            });
+            html += "</tbody></table>";
+            */
+            output.innerHTML = "<p>Query executed successfully.</p>";
+            break;
+
+          case "ERROR":
+            output.innerHTML =
+              '<p style="color:var(--vscode-errorForeground);">Error: ' +
+              message.payload +
+              ".</p>";
+            break;
+        }
+      });
+
+      function runQuery(sql) {
+        vscode.postMessage({ type: "EXECUTE_QUERY", sql });
+      }
+    </script>
+  </body>
 </html>

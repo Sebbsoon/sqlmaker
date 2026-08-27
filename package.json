@@ -17,7 +17,7 @@
         {
           "id": "sqlmakerViewContainer",
           "title": "SQLmaker",
-          "icon": "resources/icon.svg"
+          "icon": "$(database)"
         }
       ]
     },
@@ -27,7 +27,7 @@
           "type": "webview",
           "id": "sqlmaker.sidebarView",
           "name": "SQLmaker Assistant",
-          "icon": "resources/icon.svg"
+          "icon": "$(database)"
         }
       ]
     },
@@ -66,6 +66,10 @@
         ]
       }
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sebbsoon/sqlmaker.git"
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
