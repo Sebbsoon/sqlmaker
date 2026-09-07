@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { ConnectionManager } from "../services/ConnectionManager";
 import { PostgresExtractor } from "../schema/PostgresExtractor";
 import { AIAgentEngine } from "../ai/AIAgentEngine";
+import { ResultsPanel } from "./ResultPanel";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "sqlmaker.sidebarView";
@@ -29,8 +30,64 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     };
 
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "dist-webview", "assets", "index.js")
+      vscode.Uri.joinPath(
+        this._extensionUri,
+        "dist-webview",
+        "assets",
+        "index.js",
+      ),
     );
+
+    function formatAsciiTable(rows: any[], maxColWidth = 30): string {
+      if (!rows || rows.length === 0) {
+        return "0 rows returned.";
+      }
+
+      const keys = Object.keys(rows[0]);
+
+      // Calculate maximum width required for each column based on headers and row values
+      const colWidths: { [key: string]: number } = {};
+      keys.forEach((key) => {
+        let max = key.length;
+        rows.forEach((row) => {
+          const valStr =
+            row[key] === null || row[key] === undefined
+              ? "null"
+              : String(row[key]).replace(/\r?\n|\r/g, " ");
+          if (valStr.length > max) {
+            max = valStr.length;
+          }
+        });
+        colWidths[key] = Math.min(max, maxColWidth);
+      });
+
+      // Helper to format individual cells
+      const formatCell = (val: string, width: number) => {
+        const cleanVal = val.replace(/\r?\n|\r/g, " ");
+        if (cleanVal.length > width) {
+          return cleanVal.slice(0, width - 3) + "...";
+        }
+        return cleanVal.padEnd(width, " ");
+      };
+
+      // Build top divider, header row, and mid divider
+      const border =
+        "+" + keys.map((k) => "-".repeat(colWidths[k] + 2)).join("+") + "+";
+      const header =
+        "| " + keys.map((k) => formatCell(k, colWidths[k])).join(" | ") + " |";
+
+      // Build row strings
+      const rowLines = rows.map((row) => {
+        const cells = keys.map((k) => {
+          const rawVal =
+            row[k] === null || row[k] === undefined ? "null" : String(row[k]);
+          return formatCell(rawVal, colWidths[k]);
+        });
+        return "| " + cells.join(" | ") + " |";
+      });
+
+      return [border, header, border, ...rowLines, border].join("\n");
+    }
 
     webview.html = `<!doctype html>
       <html lang="en">
@@ -113,7 +170,11 @@ RULES:
                 vscode.LanguageModelChatMessage.User(data.prompt),
               ];
 
-              const chatResponse = await model.sendRequest(messages, {}, _token);
+              const chatResponse = await model.sendRequest(
+                messages,
+                {},
+                _token,
+              );
               let rawOutput = "";
               for await (const fragment of chatResponse.text) {
                 rawOutput += fragment;
@@ -129,7 +190,9 @@ RULES:
                 payload: generatedSql,
               });
             } else {
-              const apiKey = await this.context.secrets.get("sqlmaker.openai.apikey");
+              const apiKey = await this.context.secrets.get(
+                "sqlmaker.openai.apikey",
+              );
               if (!apiKey) {
                 throw new Error(
                   "No connected Language Model found in VS Code, and no OpenAI API Key configured. " +
@@ -138,7 +201,10 @@ RULES:
               }
 
               const ai = new AIAgentEngine(apiKey);
-              const generatedSql = await ai.generateSQL(data.prompt, compactDDL);
+              const generatedSql = await ai.generateSQL(
+                data.prompt,
+                compactDDL,
+              );
 
               webview.postMessage({
                 type: "SQL_RESULT",
@@ -158,16 +224,22 @@ RULES:
           try {
             const pool = this.connManager.getPool();
             const result = await pool.query(data.sql);
+            const fields = result.fields.map((f: { name: string }) => f.name);
 
-            webview.postMessage({
-              type: "QUERY_RESULTS",
-              payload: {
-                rows: result.rows,
-                fields: result.fields.map((f: { name: string }) => f.name),
-              },
+            // Open Dedicated Webview Tab beside active editor
+            ResultsPanel.render(
+              data.sql,
+              result.rows,
+              fields,
+              result.rowCount ?? result.rows.length,
+            );
+            webviewView.webview.postMessage({
+              type: "QUERY_EXECUTED",
+              payload: `Query executed. Results printed to 'SQLmaker' Output channel.`,
             });
           } catch (err: any) {
-            webview.postMessage({
+    
+            webviewView.webview.postMessage({
               type: "ERROR",
               payload: err.message,
             });
