@@ -1,6 +1,4 @@
 import * as vscode from "vscode";
-import * as path from "path";
-import * as fs from "fs";
 import { ConnectionManager } from "../services/ConnectionManager";
 import { PostgresExtractor } from "../schema/PostgresExtractor";
 import { AIAgentEngine } from "../ai/AIAgentEngine";
@@ -23,14 +21,31 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   ) {
     this._view = webviewView;
 
+    const webview = webviewView.webview;
+
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.webview.html = this._getHtmlForWebview();
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "dist-webview", "assets", "index.js")
+    );
 
-    webviewView.webview.onDidReceiveMessage(async (data) => {
+    webview.html = `<!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>SQLmaker</title>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script type="module" src="${scriptUri}"></script>
+        </body>
+      </html>`;
+
+    webview.onDidReceiveMessage(async (data) => {
       switch (data.type) {
         case "CONNECT_DB": {
           try {
@@ -39,12 +54,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             await this.connManager.saveConnection(config, data.password);
             await this.connManager.connect(config);
 
-            webviewView.webview.postMessage({
+            webview.postMessage({
               type: "CONNECT_SUCCESS",
               payload: config.name,
             });
           } catch (err: any) {
-            webviewView.webview.postMessage({
+            webview.postMessage({
               type: "ERROR",
               payload: err.message,
             });
@@ -56,12 +71,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           try {
             const pool = this.connManager.getPool();
             const schema = await this.extractor.getSchema(pool);
-            webviewView.webview.postMessage({
+
+            webview.postMessage({
               type: "SCHEMA_RESULT",
               payload: schema,
             });
           } catch (err: any) {
-            webviewView.webview.postMessage({
+            webview.postMessage({
               type: "ERROR",
               payload: err.message,
             });
@@ -97,11 +113,7 @@ RULES:
                 vscode.LanguageModelChatMessage.User(data.prompt),
               ];
 
-              const chatResponse = await model.sendRequest(
-                messages,
-                {},
-                _token,
-              );
+              const chatResponse = await model.sendRequest(messages, {}, _token);
               let rawOutput = "";
               for await (const fragment of chatResponse.text) {
                 rawOutput += fragment;
@@ -112,14 +124,12 @@ RULES:
                 ? match[1].trim()
                 : rawOutput.replace(/```/g, "").trim();
 
-              webviewView.webview.postMessage({
+              webview.postMessage({
                 type: "SQL_RESULT",
                 payload: generatedSql,
               });
             } else {
-              const apiKey = await this.context.secrets.get(
-                "sqlmaker.openai.apikey",
-              );
+              const apiKey = await this.context.secrets.get("sqlmaker.openai.apikey");
               if (!apiKey) {
                 throw new Error(
                   "No connected Language Model found in VS Code, and no OpenAI API Key configured. " +
@@ -128,18 +138,15 @@ RULES:
               }
 
               const ai = new AIAgentEngine(apiKey);
-              const generatedSql = await ai.generateSQL(
-                data.prompt,
-                compactDDL,
-              );
+              const generatedSql = await ai.generateSQL(data.prompt, compactDDL);
 
-              webviewView.webview.postMessage({
+              webview.postMessage({
                 type: "SQL_RESULT",
                 payload: generatedSql,
               });
             }
           } catch (err: any) {
-            webviewView.webview.postMessage({
+            webview.postMessage({
               type: "ERROR",
               payload: err.message,
             });
@@ -151,7 +158,8 @@ RULES:
           try {
             const pool = this.connManager.getPool();
             const result = await pool.query(data.sql);
-            webviewView.webview.postMessage({
+
+            webview.postMessage({
               type: "QUERY_RESULTS",
               payload: {
                 rows: result.rows,
@@ -159,7 +167,7 @@ RULES:
               },
             });
           } catch (err: any) {
-            webviewView.webview.postMessage({
+            webview.postMessage({
               type: "ERROR",
               payload: err.message,
             });
@@ -168,15 +176,5 @@ RULES:
         }
       }
     });
-  }
-
-  private _getHtmlForWebview(): string {
-    const htmlPath = path.join(
-      this._extensionUri.fsPath,
-      "src",
-      "html",
-      "HTMLView.html",
-    );
-    return fs.readFileSync(htmlPath, "utf8");
   }
 }
