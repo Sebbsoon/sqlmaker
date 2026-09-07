@@ -54,3 +54,14 @@ main().catch(e => {
 	console.error(e);
 	process.exit(1);
 });
+
+esbuild.build({
+  entryPoints: ["src/webview/main.tsx"],
+  bundle: true,
+  outfile: "dist/webview.js",
+  loader: {
+    ".tsx": "tsx",
+    ".ts": "ts",
+    ".css": "css",
+  },
+}).catch(() => process.exit(1));
