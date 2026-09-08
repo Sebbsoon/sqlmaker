@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import HeaderMenu from "./components/HeaderMenu";
-import { DBType, Views } from "./types/enums";
-import QueryComponent from "./views/QueryView";
-import ConnectionComponent from "./views/ConnectionView";
+import HeaderMenu from "./Sidebar/components/HeaderMenu";
+import { DBType, Views } from "./Sidebar/types/enums";
+import QueryComponent from "./Sidebar/views/QueryView";
+import ConnectionComponent from "./Sidebar/views/ConnectionView";
 
 declare const acquireVsCodeApi: () => {
   postMessage: (message: any) => void;

@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { ConnectionManager } from "../services/ConnectionManager";
-import { PostgresExtractor } from "../schema/PostgresExtractor";
-import { AIAgentEngine } from "../ai/AIAgentEngine";
-import { ResultsPanel } from "./ResultPanel";
+import { ConnectionManager } from "../../services/ConnectionManager";
+import { PostgresExtractor } from "../../schema/PostgresExtractor";
+import { AIAgentEngine } from "../../ai/AIAgentEngine";
+import { ResultsPanel } from "../Resultpanel/ResultPanel";
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "sqlmaker.sidebarView";
@@ -34,7 +34,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this._extensionUri,
         "dist-webview",
         "assets",
-        "index.js",
+        "sidebar.js",
       ),
     );
 
@@ -226,11 +226,12 @@ RULES:
             const result = await pool.query(data.sql);
             const fields = result.fields.map((f: { name: string }) => f.name);
 
-            // Open Dedicated Webview Tab beside active editor
             ResultsPanel.render(
+              this._extensionUri,
               data.sql,
               result.rows,
               fields,
+
               result.rowCount ?? result.rows.length,
             );
             webviewView.webview.postMessage({
@@ -238,7 +239,6 @@ RULES:
               payload: `Query executed. Results printed to 'SQLmaker' Output channel.`,
             });
           } catch (err: any) {
-    
             webviewView.webview.postMessage({
               type: "ERROR",
               payload: err.message,
