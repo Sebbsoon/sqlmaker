@@ -16,7 +16,7 @@ export default function App() {
   const [host, setHost] = useState("localhost");
   const [port, setPort] = useState("5432");
   const [type, setType] = useState<DBType>(DBType.POSTGRES);
-  const [dbName, setDbName] = useState("ring20_db");
+  const [dbName, setDbName] = useState("postgres");
   const [dbUser, setDbUser] = useState("postgres");
   const [dbPass, setDbPass] = useState("");
   const [prompt, setPrompt] = useState("");

@@ -39,29 +39,6 @@ Click **Save & Connect**. Credentials are stored securely using VS Code's native
 
 ---
 
-## Commands
-
-Access these commands from the Command Palette (`Cmd+Shift+P` / `Ctrl+Shift+P`):
-
-| Command | Description |
-| :--- | :--- |
-| `SQLmaker: Set OpenAI API Key` | Save your OpenAI API Key into secure storage (fallback mode). |
-| `SQLmaker: Add Database Connection` | Configure connection parameters via command prompts. |
-| `SQLmaker: Fetch Database Schema` | Trigger a manual schema extraction and refresh cache. |
-| `SQLmaker: Translate Inline Comment to SQL` | Converts highlighted comment text in an active editor into SQL. |
-| `SQLmaker: Check Connected Language Models` | Verifies available `vscode.lm` models. |
-
----
-
-## Chat Participant Usage
-
-If GitHub Copilot or Language Model access is enabled, invoke SQLmaker directly in the VS Code Chat drawer:
-
-* `@sqlmaker /generate Show all workouts completed in the last 30 days`
-* `@sqlmaker /explain` (with an active query selected in your editor)
-
----
-
 ## Requirements
 
 * **VS Code**: `v1.85.0` or higher.

@@ -1,8 +1,18 @@
 {
-  "name": "sqlmaker",
-  "displayName": "SQLmaker",
-  "description": "Natural language to SQL extension using AI.",
-  "version": "0.0.1",
+  "name": "sql-maker",
+  "displayName": "SQL Maker",
+  "description": "Generate PostgreSQL queries from natural language using AI and live database schema context.",
+  "version": "1.0.1",
+  "publisher": "Sebbsoon",
+  "license": "MIT",
+  "icon": "media/sqlmaker-icon.png",
+  "keywords": [
+    "sql",
+    "postgresql",
+    "database",
+    "ai",
+    "query generator"
+  ],
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -16,7 +26,7 @@
       "activitybar": [
         {
           "id": "sqlmakerViewContainer",
-          "title": "SQLmaker",
+          "title": "SQLMaker",
           "icon": "$(database)"
         }
       ]
@@ -26,7 +36,7 @@
         {
           "type": "webview",
           "id": "sqlmaker.sidebarView",
-          "name": "SQLmaker Assistant",
+          "name": "SQLMaker",
           "icon": "$(database)"
         }
       ]
@@ -34,19 +44,19 @@
     "commands": [
       {
         "command": "sqlmaker.testIntegration",
-        "title": "SQLmaker: Test Integration"
+        "title": "SQLMaker: Test Integration"
       },
       {
         "command": "sqlmaker.addConnection",
-        "title": "SQLmaker: Add Database Connection"
+        "title": "SQLMaker: Add Database Connection"
       },
       {
         "command": "sqlmaker.fetchSchema",
-        "title": "SQLmaker: Fetch Database Schema"
+        "title": "SQLMaker: Fetch Database Schema"
       },
       {
         "command": "sqlmaker.testTableList",
-        "title": "SQLmaker: Test Table List Query"
+        "title": "SQLMaker: Test Table List Query"
       }
     ],
     "chatParticipants": [
@@ -85,7 +95,8 @@
     "lint": "eslint src",
     "test": "vscode-test",
     "webview:build": "vite build",
-    "webview:dev": "vite"
+    "webview:dev": "vite",
+    "package:vsix": "vsce package"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -97,6 +108,7 @@
     "@vitejs/plugin-react": "^6.1.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.0.0",
+    "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.1",
     "eslint": "^10.5.0",
     "npm-run-all": "^4.1.5",
@@ -113,9 +125,5 @@
     "pg": "^8.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
-  },
-  "files": [
-    "dist/**",
-    "dist-webview/**"
-  ]
+  }
 }
